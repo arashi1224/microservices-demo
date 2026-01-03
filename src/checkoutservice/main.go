@@ -281,10 +281,12 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 		log.Infof("order confirmation email sent to %q", req.Email)
 	}
 
-	if err := cs.subscribe(ctx, req.Email); err != nil {
-		log.Warnf("failed to subscribe to newsletter with %q: %+v", req.Email, err)
-	} else {
-		log.Infof("subscribed to newsletter with %q", req.Email)
+	if req.Subscribe {
+		if err := cs.subscribe(ctx, req.Email, req.Name, req.Surname, orderResult); err != nil {
+			log.Warnf("failed to subscribe to newsletter with %q: %+v", req.Email, err)
+		} else {
+			log.Infof("subscribed to newsletter with %q", req.Email)
+		}
 	}
 
 	resp := &pb.PlaceOrderResponse{Order: orderResult}
@@ -405,8 +407,11 @@ func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, i
 	return resp.GetTrackingId(), nil
 }
 
-func (cs *checkoutService) subscribe(ctx context.Context, email string) error {
+func (cs *checkoutService) subscribe(ctx context.Context, email string, name string, surname string, order *pb.OrderResult) error {
 	_, err := pb.NewNewsletterServiceClient(cs.newsletterSvcConn).Subscribe(ctx, &pb.SubscribeRequest{
-		Email: email})
+		Email: email,
+		Name: name,
+		Surname: surname,
+		Order: order})
 	return err
 }

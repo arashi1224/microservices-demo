@@ -40,6 +40,8 @@ type AddToCartPayload struct {
 }
 
 type PlaceOrderPayload struct {
+	Name          string `validate:"required,max=128"`
+	Surname       string `validate:"required,max=128"`
 	Email         string `validate:"required,email"`
 	StreetAddress string `validate:"required,max=512"`
 	ZipCode       int64  `validate:"required"`
@@ -50,6 +52,7 @@ type PlaceOrderPayload struct {
 	CcMonth       int64  `validate:"required,gte=1,lte=12"`
 	CcYear        int64  `validate:"required"`
 	CcCVV         int64  `validate:"required"`
+	Subscribe     bool
 }
 
 type SetCurrencyPayload struct {
