@@ -83,6 +83,9 @@ type checkoutService struct {
 
 	paymentSvcAddr string
 	paymentSvcConn *grpc.ClientConn
+
+	newsletterSvcAddr string
+	newsletterSvcConn *grpc.ClientConn
 }
 
 func main() {
@@ -114,6 +117,7 @@ func main() {
 	mustMapEnv(&svc.currencySvcAddr, "CURRENCY_SERVICE_ADDR")
 	mustMapEnv(&svc.emailSvcAddr, "EMAIL_SERVICE_ADDR")
 	mustMapEnv(&svc.paymentSvcAddr, "PAYMENT_SERVICE_ADDR")
+	mustMapEnv(&svc.newsletterSvcAddr, "NEWSLETTER_SERVICE_ADDR")
 
 	mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr)
 	mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr)
@@ -121,6 +125,7 @@ func main() {
 	mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr)
 	mustConnGRPC(ctx, &svc.emailSvcConn, svc.emailSvcAddr)
 	mustConnGRPC(ctx, &svc.paymentSvcConn, svc.paymentSvcAddr)
+	mustConnGRPC(ctx, &svc.newsletterSvcConn, svc.newsletterSvcAddr)
 
 	log.Infof("service config: %+v", svc)
 
@@ -275,6 +280,13 @@ func (cs *checkoutService) PlaceOrder(ctx context.Context, req *pb.PlaceOrderReq
 	} else {
 		log.Infof("order confirmation email sent to %q", req.Email)
 	}
+
+	if err := cs.subscribe(ctx, req.Email); err != nil {
+		log.Warnf("failed to subscribe to newsletter with %q: %+v", req.Email, err)
+	} else {
+		log.Infof("subscribed to newsletter with %q", req.Email)
+	}
+
 	resp := &pb.PlaceOrderResponse{Order: orderResult}
 	return resp, nil
 }
@@ -391,4 +403,10 @@ func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, i
 		return "", fmt.Errorf("shipment failed: %+v", err)
 	}
 	return resp.GetTrackingId(), nil
+}
+
+func (cs *checkoutService) subscribe(ctx context.Context, email string) error {
+	_, err := pb.NewNewsletterServiceClient(cs.newsletterSvcConn).Subscribe(ctx, &pb.SubscribeRequest{
+		Email: email})
+	return err
 }
