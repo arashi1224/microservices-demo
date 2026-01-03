@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: newsletter-db
+    environment:
+      POSTGRES_DB: newsletter
+      POSTGRES_USER: newsletter_user
+      POSTGRES_PASSWORD: newsletter_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U newsletter_user -d newsletter"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Newsletter Service
+  newsletter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: newsletter-service
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: newsletter
+      POSTGRES_USER: newsletter_user
+      POSTGRES_PASSWORD: newsletter_pass
+      # Disable gRPC - we'll use mock data
+      USE_MOCK_PRODUCTS: "true"
+    ports:
+      - "9080:9080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Mount source files for live development
+      - ./src:/usr/src/app/src:ro
+
+  # pgAdmin - Web UI for PostgreSQL (optional, but helpful for learning)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: newsletter-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+

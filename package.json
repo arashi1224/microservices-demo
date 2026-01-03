@@ -1,0 +1,23 @@
+{
+  "name": "newsletter-sandbox",
+  "version": "1.0.0",
+  "description": "Standalone sandbox for learning PostgreSQL with the newsletter service",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "tests": "node src/tests.js",
+    "dev": "nodemon src/index.js",
+    "db:up": "docker-compose up -d postgres pgadmin",
+    "db:down": "docker-compose down",
+    "db:reset": "docker-compose down -v && docker-compose up -d postgres pgadmin",
+    "db:logs": "docker-compose logs -f postgres",
+    "db:psql": "docker exec -it newsletter-db psql -U newsletter_user -d newsletter"
+  },
+  "dependencies": {
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}
+
