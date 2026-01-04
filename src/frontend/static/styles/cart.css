@@ -100,7 +100,7 @@
     margin-bottom: 0;
 }
 
-.payment-method-heading {
+.payment-method-heading, .newsletter-heading {
     margin-top: 36px;
 }
 

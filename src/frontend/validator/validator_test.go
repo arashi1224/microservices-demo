@@ -22,28 +22,35 @@ import (
 func TestPlaceOrderPassesValidation(t *testing.T) {
 	tests := []struct {
 		name          string
+		firstname     string
+		surname       string
 		email         string
 		streetAddress string
 		zipCode       int64
 		city          string
 		state         string
 		country       string
+		subscribe     bool
 		ccNumber      string
 		ccMonth       int64
 		ccYear        int64
 		ccCVV         int64
 	}{
-		{"valid", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", "5272940000751666", 4, 2024, 584},
+		{"valid (subscribe)", "Sam", "Sampleman", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", true, "5272940000751666", 4, 2024, 584},
+		{"valid (do not subscribe)", "Sam", "Sampleman", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", false, "5272940000751666", 4, 2024, 584},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			payload := PlaceOrderPayload{
+				Name:          tt.firstname,
+				Surname:       tt.surname,
 				Email:         tt.email,
 				StreetAddress: tt.streetAddress,
 				ZipCode:       tt.zipCode,
 				City:          tt.city,
 				State:         tt.state,
 				Country:       tt.country,
+				subscribe:     tt.subscribe,
 				CcNumber:      tt.ccNumber,
 				CcMonth:       tt.ccMonth,
 				CcYear:        tt.ccYear,
@@ -59,38 +66,46 @@ func TestPlaceOrderPassesValidation(t *testing.T) {
 func TestPlaceOrderFailsValidation(t *testing.T) {
 	tests := []struct {
 		name          string
+		firstname     string
+		surname       string
 		email         string
 		streetAddress string
 		zipCode       int64
 		city          string
 		state         string
 		country       string
+		subscribe     bool
 		ccNumber      string
 		ccMonth       int64
 		ccYear        int64
 		ccCVV         int64
 	}{
-		{"invalid email", "test@example", "12345 example street", 10004, "New York", "New York", "United States", "5272940000751666", 4, 2024, 584},
-		{"invalid address (too long)", "test@example.com", strings.Repeat("12345 example street", 513), 10004, "New York", "New York", "United States", "5272940000751666", 4, 2024, 584},
-		{"invalid zip code", "test@example.com", "12345 example street", 0, "New York", "New York", "United States", "5272940000751666", 4, 2024, 584},
-		{"invalid city", "test@example.com", "12345 example street", 10004, "", "New York", "United States", "5272940000751666", 4, 2024, 584},
-		{"invalid state", "test@example.com", "12345 example street", 10004, "New York", "", "United States", "5272940000751666", 4, 2024, 584},
-		{"invalid country", "test@example.com", "12345 example street", 10004, "New York", "New York", "", "5272940000751666", 4, 2024, 584},
-		{"invalid ccNumber", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", "5272940000", 4, 2024, 584},
-		{"invalid ccMonth (month < 1)", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", "5272940000751666", 0, 2024, 584},
-		{"invalid ccMonth (month > 12)", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", "5272940000751666", 13, 2024, 584},
-		{"invalid ccYear (not provided)", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", "5272940000751666", 12, 0, 584},
-		{"invalid ccCVV (not provided)", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", "5272940000751666", 12, 2024, 0},
+		{"invalid name", "", "Sampleman", "test@example", "12345 example street", 10004, "New York", "New York", "United States", true, "5272940000751666", 4, 2024, 584},
+		{"invalid surname", "Sam", "", "test@example", "12345 example street", 10004, "New York", "New York", "United States", true, "5272940000751666", 4, 2024, 584},
+		{"invalid email", "Sam", "Sampleman", "test@example", "12345 example street", 10004, "New York", "New York", "United States", true, "5272940000751666", 4, 2024, 584},
+		{"invalid address (too long)", "Sam", "Sampleman", "test@example.com", strings.Repeat("12345 example street", 513), 10004, "New York", "New York", "United States", true, "5272940000751666", 4, 2024, 584},
+		{"invalid zip code", "Sam", "Sampleman", "test@example.com", "12345 example street", 0, "New York", "New York", "United States", true, "5272940000751666", 4, 2024, 584},
+		{"invalid city", "Sam", "Sampleman", "test@example.com", "12345 example street", 10004, "", "New York", "United States", true, "5272940000751666", 4, 2024, 584},
+		{"invalid state", "Sam", "Sampleman", "test@example.com", "12345 example street", 10004, "New York", "", "United States", true, "5272940000751666", 4, 2024, 584},
+		{"invalid country", "Sam", "Sampleman", "test@example.com", "12345 example street", 10004, "New York", "New York", "", true, "5272940000751666", 4, 2024, 584},
+		{"invalid ccNumber", "Sam", "Sampleman", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", true, "5272940000", 4, 2024, 584},
+		{"invalid ccMonth (month < 1)", "Sam", "Sampleman", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", true, "5272940000751666", 0, 2024, 584},
+		{"invalid ccMonth (month > 12)", "Sam", "Sampleman", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", true, "5272940000751666", 13, 2024, 584},
+		{"invalid ccYear (not provided)", "Sam", "Sampleman", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", true, "5272940000751666", 12, 0, 584},
+		{"invalid ccCVV (not provided)", "Sam", "Sampleman", "test@example.com", "12345 example street", 10004, "New York", "New York", "United States", true, "5272940000751666", 12, 2024, 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			payload := PlaceOrderPayload{
+				Name:          tt.firstname,
+				Surname:       tt.surname,
 				Email:         tt.email,
 				StreetAddress: tt.streetAddress,
 				ZipCode:       tt.zipCode,
 				City:          tt.city,
 				State:         tt.state,
 				Country:       tt.country,
+				Subscribe:     tt.subscribe,
 				CcNumber:      tt.ccNumber,
 				CcMonth:       tt.ccMonth,
 				CcYear:        tt.ccYear,
