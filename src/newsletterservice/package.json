@@ -1,26 +1,32 @@
 {
   "name": "newsletterservice",
-  "version": "0.0.1",
-  "description": "Newsletter Microservice demo",
+  "version": "1.0.0",
+  "description": "Newsletter microservice for Hipster Shop",
   "repository": "https://github.com/GoogleCloudPlatform/microservices-demo",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "test": "node newsletter.js",
+    "dev": "nodemon index.js"
   },
   "author": "DM",
   "license": "ISC",
   "dependencies": {
     "@google-cloud/profiler": "6.0.3",
-    "@grpc/grpc-js": "1.14.3",
-    "@grpc/proto-loader": "0.8.0",
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.0",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/exporter-otlp-grpc": "0.26.0",
     "@opentelemetry/instrumentation-grpc": "0.208.0",
-    "@opentelemetry/sdk-trace-base": "2.2.0",
-    "@opentelemetry/sdk-node": "0.208.0",
     "@opentelemetry/resources": "2.2.0",
+    "@opentelemetry/sdk-node": "0.208.0",
+    "@opentelemetry/sdk-trace-base": "2.2.0",
     "@opentelemetry/semantic-conventions": "1.38.0",
-    "pino": "10.1.0",
-    "email-validator": "^2.0.4"
+    "email-validator": "^2.0.4",
+    "node-cron": "^3.0.2",
+    "pino": "10.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
   }
 }

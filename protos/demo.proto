@@ -261,12 +261,34 @@ message Ad {
     string text = 2;
 }
 
-// ------------Newsletter service------------------
+// -------------Newsletter service-----------------
 
 service NewsletterService {
+    rpc SendNewsletter(SendNewsletterRequest) returns (SendNewsletterResponse) {}
+    rpc SendNewsletterBatch(Empty) returns (SendNewsletterBatchResponse) {}
     rpc Subscribe(SubscribeRequest) returns (Empty) {}
 }
 
 message SubscribeRequest {
     string email = 1;
+}
+
+message SendNewsletterRequest {
+    string user_email = 1;
+    string first_name = 2;
+    string last_name = 3;
+}
+
+message SendNewsletterResponse {
+    bool success = 1;
+    string message = 2;
+    string product_id = 3;
+    string product_name = 4;
+}
+
+message SendNewsletterBatchResponse {
+    int32 total_sent = 1;
+    int32 successful = 2;
+    int32 failed = 3;
+    repeated string failed_emails = 4;
 }

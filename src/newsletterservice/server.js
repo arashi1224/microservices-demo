@@ -15,8 +15,10 @@
 const path = require('path');
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
+const cron = require('node-cron');
 
 const subscribe = require('./subscribe');
+const { sendNewsletterBatch } = require('./newsletter');
 
 const logger = require('./logger')
 
@@ -60,11 +62,23 @@ class HipsterShopServer {
     server.bindAsync(
       `[::]:${port}`,
       grpc.ServerCredentials.createInsecure(),
-      function () {
+      () => {
         logger.info(`NewsletterService gRPC server started on port ${port}`);
         server.start();
+  
+        this.startCron()
       }
     );
+  }
+
+  startCron() {
+    console.log('📅 Newsletter Cron Scheduler Started');
+    cron.schedule('* * * * *', () => {
+        console.log('\n⏰ Scheduled task triggered!');
+        sendNewsletterBatch();
+    });
+    // Run once immediately
+    sendNewsletterBatch();
   }
 
   loadProto(path) {
