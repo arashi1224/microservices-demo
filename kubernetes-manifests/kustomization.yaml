@@ -22,6 +22,7 @@ resources:
  - emailservice.yaml
  - frontend.yaml
 # - loadgenerator.yaml # During development, the loadgenerator module inside skaffold.yaml will be used.
+ - newsletterservice.yaml
  - paymentservice.yaml
  - productcatalogservice.yaml
  - recommendationservice.yaml
