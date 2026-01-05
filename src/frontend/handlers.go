@@ -321,13 +321,23 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	log.Debug("placing order")
 
+	var subBool bool
+	if r.FormValue("subscribe") == "on" {
+		subBool = true
+	} else {
+		subBool = false
+	}
+
 	var (
+		name          = r.FormValue("name")
+		surname       = r.FormValue("surname")
 		email         = r.FormValue("email")
 		streetAddress = r.FormValue("street_address")
 		zipCode, _    = strconv.ParseInt(r.FormValue("zip_code"), 10, 32)
 		city          = r.FormValue("city")
 		state         = r.FormValue("state")
 		country       = r.FormValue("country")
+		subscribe     = subBool
 		ccNumber      = r.FormValue("credit_card_number")
 		ccMonth, _    = strconv.ParseInt(r.FormValue("credit_card_expiration_month"), 10, 32)
 		ccYear, _     = strconv.ParseInt(r.FormValue("credit_card_expiration_year"), 10, 32)
@@ -335,12 +345,15 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 	)
 
 	payload := validator.PlaceOrderPayload{
+		Name:          name,
+		Surname:       surname,
 		Email:         email,
 		StreetAddress: streetAddress,
 		ZipCode:       zipCode,
 		City:          city,
 		State:         state,
 		Country:       country,
+		Subscribe:     subscribe,
 		CcNumber:      ccNumber,
 		CcMonth:       ccMonth,
 		CcYear:        ccYear,
@@ -367,6 +380,9 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 				State:         payload.State,
 				ZipCode:       int32(payload.ZipCode),
 				Country:       payload.Country},
+			Subscribe: payload.Subscribe,
+			Name: payload.Name,
+			Surname: payload.Surname,
 		})
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to complete the order"), http.StatusInternalServerError)

@@ -232,6 +232,9 @@ message PlaceOrderRequest {
     Address address = 3;
     string email = 5;
     CreditCardInfo credit_card = 6;
+    bool subscribe = 7;
+    string name = 8;
+    string surname = 9;
 }
 
 message PlaceOrderResponse {
@@ -266,6 +269,14 @@ message Ad {
 service NewsletterService {
     rpc SendNewsletter(SendNewsletterRequest) returns (SendNewsletterResponse) {}
     rpc SendNewsletterBatch(Empty) returns (SendNewsletterBatchResponse) {}
+    rpc Subscribe(SubscribeRequest) returns (Empty) {}
+}
+
+message SubscribeRequest {
+    string email = 1;
+    string name = 2;
+    string surname = 3;
+    OrderResult order = 4;
 }
 
 message SendNewsletterRequest {

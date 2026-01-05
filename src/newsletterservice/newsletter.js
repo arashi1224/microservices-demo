@@ -9,7 +9,7 @@ const protoLoader = require('@grpc/proto-loader');
 
 // Proto path - in Docker container it will be copied to protos/demo.proto
 const PROTO_PATH = process.env.PROTO_PATH || 
-                   path.join(__dirname, 'protos/demo.proto');
+                   path.join(__dirname, 'proto/demo.proto');
 const PRODUCT_CATALOG_ADDR = process.env.PRODUCT_CATALOG_SERVICE_ADDR || 'localhost:3550';
 
 let productCatalogClient = null;
