@@ -43,6 +43,9 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
         image: newsletterservice
         ports:
         - containerPort: 8080
@@ -68,6 +71,9 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
+      volumes:
+      - name: tmp
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

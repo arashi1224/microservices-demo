@@ -14,6 +14,9 @@
 
 const emailValidator = require('email-validator');
 const pino = require('pino');
+// const path = require('path');
+const fs = require('fs').promises;
+const filePath = '/tmp/user.json'; // path.join(__dirname, 'user.json');
 
 const logger = pino({
   name: 'newsletterservice-subscribe',
@@ -45,24 +48,47 @@ class InvalidEmail extends EmailError {
  * @return nothing - {}.
  */
 module.exports = function subscribe (request) {
-  const { email } = request;
+  const { email, name, surname, order } = request;
   const valid = emailValidator.validate(email);
   
   if (!valid) { throw new InvalidEmail(); }
 
+  writeUserToFile(email, name, surname, order);
 
-
-
-
-  // logger.info(`Subscription successful: ${email}`);
-  // console.log(`Subscription successful: ${email}`);
-
-  logger.info(`Dear customer with email ${email}, check out the fancy new products in out store at http://localhost:8080 !`)
-
-
-
-
-
+  // console.log(`Hello ${name} ${surname}, thank your for subscribing with your email: ${email}.\nWe appreciate that you bought the item with the id ${order.items[0].item.product_id}! `);
   
   return { };
 };
+
+async function writeUserToFile(email, name, surname, order) {
+  try {
+    let data;
+
+    try {
+      const rawData = await fs.readFile(filePath, 'utf8');
+      data = JSON.parse(rawData)
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        data = { users: [] };
+      } else {
+        throw err;
+      }
+    }
+
+    data.users.push({
+      id: data.users.length ? data.users[data.users.length - 1].id + 1 : 1,
+      email,
+      firstName: name,
+      lastName: surname
+      // order: order
+    });
+
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+
+    logger.info(`Subscription successful: ${email}`);
+    logger.info({ users: data.users }, 'Current user.json contents');
+    // logger.info(`Current data: ${{ users: data.users }}`);
+  } catch (err) {
+    logger.error(err, 'An unexpected error occurred while writing user to newsletterservice/user.js file');
+  }
+}
