@@ -140,9 +140,15 @@ function generateNewsletterContent(user, product) {
   const dollars = product.price_usd.units;
   const cents = Math.floor(product.price_usd.nanos / 10000000);
   const priceFormatted = `${product.price_usd.currency_code} $${dollars}.${cents.toString().padStart(2, '0')}`;
-  const frontendAddr = process.env.FRONTEND_ADDR || 'localhost:8080';
-  const baseUrl = process.env.FRONTEND_URL || `http://${frontendAddr}`;
-  const httpHost = process.env.HTTP_ADDR || 'localhost:8081';
+  let httpHost = process.env.HTTP_ADDR || 'localhost:8081';
+    if (!httpHost.startsWith('http')) {
+      httpHost = `http://${httpHost}`;
+    }
+
+    let baseUrl = process.env.FRONTEND_URL || `http://${process.env.FRONTEND_ADDR || 'localhost:8080'}`;
+    if (!baseUrl.startsWith('http')) {
+      baseUrl = `http://${baseUrl}`;
+    }
   const safeEmail = encodeURIComponent(user.email);
   
   const body = newsletterTemplate
@@ -155,6 +161,8 @@ function generateNewsletterContent(user, product) {
     .replaceAll('${product.id}', product.id)
     .replaceAll('${product.description}', product.description)
     .replaceAll('${product.picture}', product.picture)
+    .replaceAll('${httpHost}', httpHost)
+    .replaceAll('${safeEmail}', safeEmail)
 
   return { subject, body };
 }
