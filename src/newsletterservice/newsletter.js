@@ -2,6 +2,8 @@ const fs = require('fs').promises;
 const path = require('path');
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
+// DB: Importing the Functions
+const db = require('./db');
 
 // ============================================
 // setup gRPC client for ProductCatalogService
@@ -45,19 +47,18 @@ function initProductCatalogClient() {
 // ============================================
 // Load user data from JSON file
 // ============================================
-
+//DB: switched from JSON file to database
 async function loadUsersFromDatabase() {
   try {
-    const filePath = path.join(__dirname, 'users.json');
-    const data = await fs.readFile(filePath, 'utf8');
-    const jsonData = JSON.parse(data);
-    console.log(`✅ Loaded ${jsonData.users.length} users from database`);
-    return jsonData.users;
+    const users = await db.getAllSubscribers();
+    console.log(`✅ Loaded ${users.length} subscribers from database`);
+    return users;
   } catch (error) {
-    console.error('❌ Error loading users:', error);
+    console.error('❌ Error loading subscribers:', error);
     return [];
   }
 }
+  
 
 // ============================================
 // Extract user info into email format (ONE user)
@@ -239,21 +240,35 @@ async function processNewsletterForUser(user) {
     // 5. Send email
     const result = await sendEmailViaService(emailObject);
     console.log('   ✓ Email sent successfully!');
-    
+
+    // DB: 6- Record the email sent
+    await db.recordEmailSent(user.id, subject, product.id, product.name, result.success ? 'sent' : 'failed');
+    console.log('   ✓ Recorded in database');
+
+
     return {
       success: true,
       user: user.email,
       product: product.name,
       productId: product.id,
-      result: result
+      result: result.message
     };
     
   } catch (error) {
-    console.error(`   ❌ Error processing newsletter for ${user.email}:`, error.message);
+    console.error(`   ❌ Error: ${error.message}`);
+    
+    //DB: 7- Record failure in database
+    if (user.id) {
+      try {
+        await db.recordEmailSent(user.id, subject, product.id, product.name, 'failed');
+      } catch (e) {
+        console.error('   ⚠️  Could not record failure');
+      }
+    }
     return {
       success: false,
       user: user.email,
-      error: error.message
+      result: error.message
     };
   }
 }

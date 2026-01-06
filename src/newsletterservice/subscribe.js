@@ -16,7 +16,9 @@ const emailValidator = require('email-validator');
 const pino = require('pino');
 // const path = require('path');
 const fs = require('fs').promises;
-const filePath = '/tmp/user.json'; // path.join(__dirname, 'user.json');
+// DB: Import, and removing JSON file
+//const filePath = '/tmp/user.json'; // path.join(__dirname, 'user.json');
+const db = require('./db');
 
 const logger = pino({
   name: 'newsletterservice-subscribe',
@@ -53,13 +55,17 @@ module.exports = function subscribe (request) {
   
   if (!valid) { throw new InvalidEmail(); }
 
-  writeUserToFile(email, name, surname, order);
+  //writeUserToFile(email, name, surname, order);
+  // DB: Added to database
+  addUserToDatabase(email, name, surname);
+  
 
   // console.log(`Hello ${name} ${surname}, thank your for subscribing with your email: ${email}.\nWe appreciate that you bought the item with the id ${order.items[0].item.product_id}! `);
   
   return { };
 };
 
+/* DB: Changed to database instead of JSON file
 async function writeUserToFile(email, name, surname, order) {
   try {
     let data;
@@ -90,5 +96,16 @@ async function writeUserToFile(email, name, surname, order) {
     // logger.info(`Current data: ${{ users: data.users }}`);
   } catch (err) {
     logger.error(err, 'An unexpected error occurred while writing user to newsletterservice/user.js file');
+  }
+}
+*/
+// DB: Adding user to database
+async function addUserToDatabase(email, name, surname) {
+  try {
+    await db.addSubscriber(email, name, surname);
+    logger.info(`Subscription successful: ${email} saved to database`);
+  } catch (error) {
+    logger.error(`Failed to save subscriber ${email}: ${error.message}`);
+    throw new Error('Failed to save subscription to database');
   }
 }
