@@ -44,4 +44,4 @@ resources:
 configMapGenerator:
   - name: postgres-newsletter-init
     files:
-      - init.sql=../src/newsletterservice/init.sql
+      - init.sql
