@@ -38,3 +38,10 @@ resources:
 # - ../kustomize/components/container-images-tag
 # - ../kustomize/components/container-images-tag-suffix
 # - ../kustomize/components/container-images-registry
+
+
+# DB : Generate ConfigMap from init.sql file
+configMapGenerator:
+  - name: postgres-newsletter-init
+    files:
+      - init.sql=../src/newsletterservice/init.sql
