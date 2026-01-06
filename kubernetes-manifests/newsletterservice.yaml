@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ============================================
+# NEWSLETTER SERVICE DEPLOYMENT
+# ============================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -43,9 +46,6 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        volumeMounts:
-        - name: tmp
-          mountPath: /tmp
         image: newsletterservice
         ports:
         - containerPort: 8080
@@ -56,11 +56,33 @@ spec:
           value: "productcatalogservice:3550"
         - name: DISABLE_PROFILER
           value: "1"
+        # PostgreSQL Database Configuration
+        - name: POSTGRES_HOST
+          value: "postgres-newsletter"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-newsletter-credentials
+              key: database
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-newsletter-credentials
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-newsletter-credentials
+              key: password
         readinessProbe:
+          initialDelaySeconds: 15
           periodSeconds: 5
           grpc:
             port: 8080
         livenessProbe:
+          initialDelaySeconds: 15
           periodSeconds: 5
           grpc:
             port: 8080
@@ -71,10 +93,10 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
-      volumes:
-      - name: tmp
-        emptyDir: {}
 ---
+# ============================================
+# NEWSLETTER SERVICE - SERVICE
+# ============================================
 apiVersion: v1
 kind: Service
 metadata:
@@ -90,7 +112,143 @@ spec:
     port: 5000
     targetPort: 8080
 ---
+# ============================================
+# NEWSLETTER SERVICE - SERVICE ACCOUNT
+# ============================================
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: newsletterservice
+---
+# ============================================
+# POSTGRESQL DATABASE - SECRET
+# ============================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-newsletter-credentials
+type: Opaque
+stringData:
+  username: newsletter_user
+  password: newsletter_pass
+  database: newsletter
+---
+# ============================================
+# POSTGRESQL DATABASE - PERSISTENT VOLUME CLAIM
+# ============================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-newsletter-pvc
+  labels:
+    app: postgres-newsletter
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+# ============================================
+# POSTGRESQL DATABASE - DEPLOYMENT
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-newsletter
+  labels:
+    app: postgres-newsletter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-newsletter
+  template:
+    metadata:
+      labels:
+        app: postgres-newsletter
+    spec:
+      securityContext:
+        fsGroup: 999
+        runAsGroup: 999
+        runAsUser: 999
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-newsletter-credentials
+              key: database
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-newsletter-credentials
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-newsletter-credentials
+              key: password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: 500m
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - newsletter_user
+            - -d
+            - newsletter
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - newsletter_user
+            - -d
+            - newsletter
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-newsletter-pvc
+      - name: init-script
+        configMap:
+          name: postgres-newsletter-init
+---
+# ============================================
+# POSTGRESQL DATABASE - SERVICE
+# ============================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-newsletter
+  labels:
+    app: postgres-newsletter
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres-newsletter
+  ports:
+  - name: tcp-postgres
+    port: 5432
+    targetPort: 5432
