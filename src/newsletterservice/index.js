@@ -17,6 +17,8 @@
 'use strict';
 
 const logger = require('./logger')
+// DB: Import
+const db = require('./db');
 
 if (process.env.DISABLE_PROFILER) {
   logger.info("Profiler disabled.")
@@ -70,6 +72,23 @@ const HipsterShopServer = require('./server');
 const PORT = process.env['PORT'];
 const PROTO_PATH = path.join(__dirname, '/proto/');
 
-const server = new HipsterShopServer(PROTO_PATH, PORT);
+// DB: Added to initialize the database. 
+// gRPC Initialization unchanged
+async function startServer() {
+  try {
+    // Test database connection
+    logger.info('Connecting to PostgreSQL...');
+    await db.testConnection();
+    await db.initDatabase();
+    logger.info('Database initialized successfully');
+    
+    // Start gRPC server
+    const server = new HipsterShopServer(PROTO_PATH, PORT);
+    server.listen();
+  } catch (error) {
+    logger.error(`Failed to start server: ${error.message}`);
+    process.exit(1);
+  }
+}
 
-server.listen();
+startServer();

@@ -40,10 +40,11 @@ class HipsterShopServer {
    * @param {*} call  { SubscribeRequest }
    * @param {*} callback  fn(err, Empty)
    */
-  static SubscribeServiceHandler(call, callback) {
+  // DB: Changed it to an async function to addUserToDatabase()
+  static async SubscribeServiceHandler(call, callback) {
     try {
       logger.info(`NewsletterService#Subscribe invoked with request ${JSON.stringify(call.request)}`);
-      const response = subscribe(call.request);
+      const response = await subscribe(call.request);
       callback(null, response);
     } catch (err) {
       console.warn(err);
