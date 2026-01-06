@@ -151,6 +151,7 @@ function generateNewsletterContent(user, product) {
     .replaceAll('${product.name}', product.name)
     .replaceAll('${priceFormatted}', priceFormatted)
     .replaceAll('${baseURL}', baseUrl)
+    .replaceAll('${product.id}', product.id)
     .replaceAll('${product.description}', product.description)
     .replaceAll('${product.picture}', product.picture)
 
