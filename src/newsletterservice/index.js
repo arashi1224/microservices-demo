@@ -76,7 +76,6 @@ const PROTO_PATH = path.join(__dirname, '/proto/');
 // gRPC Initialization unchanged
 async function startServer() {
   try {
-    // Test database connection
     logger.info('Connecting to PostgreSQL...');
     await db.testConnection();
     await db.initDatabase();
@@ -87,7 +86,7 @@ async function startServer() {
     server.listen();
   } catch (error) {
     logger.error(`Failed to start server: ${error.message}`);
-    process.exit(1);
+    process.exit(1); // Kubernetes will restart the pod
   }
 }
 

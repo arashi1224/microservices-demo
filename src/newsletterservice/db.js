@@ -22,17 +22,53 @@ function createPool() {
     password: process.env.POSTGRES_PASSWORD || 'newsletter_pass',
     max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000, 
   };
 
   pool = new Pool(config);
 
   pool.on('error', (err) => {
-    console.error('❌ Unexpected error on idle PostgreSQL client', err);
+    console.error('❌ Unexpected error on idle PostgreSQL client', err.message);
   });
 
   console.log(`✅ PostgreSQL pool created: ${config.host}:${config.port}/${config.database}`);
   return pool;
+}
+
+// Helper function to wait
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function testConnection(retries = 5, delay = 5000) {
+  for (let i = 0; i < retries; i++) {
+    const client = createPool();
+    try {
+      console.log(`🔌 Attempting database connection (Try ${i + 1}/${retries})...`);
+      const result = await client.query('SELECT NOW()');
+      console.log('✅ Database connection ESTABLISHED:', result.rows[0].now);
+      return true;
+    } catch (error) {
+      console.error(`⚠️ Connection failed: ${error.message}`);
+      if (i < retries - 1) {
+        console.log(`⏳ Waiting ${delay / 1000}s before retrying...`);
+        await sleep(delay);
+      } else {
+        console.error('❌ Could not connect to database after multiple attempts.');
+        throw error;
+      }
+    }
+  }
+}
+
+async function closeDatabase() {
+  if (pool) {
+    try {
+      await pool.end();
+      pool = null;
+      console.log('✅ Database connection closed');
+    } catch (error) {
+      console.error('❌ Error closing database:', error.message);
+    }
+  }
 }
 
 // ============================================
@@ -40,6 +76,9 @@ function createPool() {
 // ============================================
 
 async function initDatabase() {
+  // ⚠️ CHANGED: Ensure connection is valid before trying to create tables
+  await testConnection(); 
+
   const client = createPool();
 
   try {
@@ -62,8 +101,10 @@ async function initDatabase() {
         id SERIAL PRIMARY KEY,
         subscriber_id INTEGER REFERENCES subscribers(id),
         subject VARCHAR(500) NOT NULL,
+        product_id VARCHAR(255),
+        product_name VARCHAR(255),
         sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        status VARCHAR(500) DEFAULT 'sent'
+        status VARCHAR(50) DEFAULT 'sent'
       )
     `);
 
@@ -91,7 +132,7 @@ async function getAllSubscribers() {
     );
 
     console.log(`✅ Loaded ${result.rows.length} active subscribers`);
-    
+  
     return result.rows.map(row => ({
       id: row.id,
       email: row.email,
@@ -202,116 +243,13 @@ async function recordEmailSent(subscriberId, subject, productId = null, productN
     const result = await client.query(
       `INSERT INTO email_history (subscriber_id, subject, product_id, product_name, status) 
        VALUES ($1, $2, $3, $4, $5) 
-       RETURNING id, subscriber_id, subject, product_id, product_name, sent_at, status`,
+       RETURNING id`,
       [subscriberId, subject, productId, productName, status]
     );
-
-    const row = result.rows[0];
-    console.log(`✅ Recorded email for subscriber ${subscriberId}`);
-    
-    return {
-      id: row.id,
-      subscriberId: row.subscriber_id,
-      subject: row.subject,
-//      body: row.body,
-      productId: row.product_id,
-      productName: row.product_name,
-      sentAt: row.sent_at,
-      status: row.status
-    };
+    return result.rows[0];
   } catch (error) {
     console.error(`❌ Error recording email:`, error.message);
-    throw error;
-  }
-}
-
-/**
- * Get email history for a subscriber
- */
-async function getEmailHistory(subscriberId, limit = 10) {
-  const client = createPool();
-
-  try {
-    const result = await client.query(
-      `SELECT id, subscriber_id, subject, product_id, product_name, sent_at, status 
-       FROM email_history 
-       WHERE subscriber_id = $1 
-       ORDER BY sent_at DESC 
-       LIMIT $2`,
-      [subscriberId, limit]
-    );
-
-    return result.rows.map(row => ({
-      id: row.id,
-      subscriberId: row.subscriber_id,
-      subject: row.subject,
-      productId: row.product_id,
-      productName: row.product_name,
-      sentAt: row.sent_at,
-      status: row.status
-    }));
-  } catch (error) {
-    console.error(`❌ Error getting email history:`, error.message);
-    throw error;
-  }
-}
-
-/**
- * Get email statistics
- */
-async function getEmailStats() {
-  const client = createPool();
-
-  try {
-    const result = await client.query(`
-      SELECT 
-        COUNT(*) as total_emails,
-        COUNT(DISTINCT subscriber_id) as unique_subscribers,
-        COUNT(CASE WHEN status = 'sent' THEN 1 END) as successful,
-        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed
-      FROM email_history
-    `);
-
-    const row = result.rows[0];
-    return {
-      totalEmails: parseInt(row.total_emails),
-      uniqueSubscribers: parseInt(row.unique_subscribers),
-      successful: parseInt(row.successful),
-      failed: parseInt(row.failed)
-    };
-  } catch (error) {
-    console.error('❌ Error getting email stats:', error.message);
-    throw error;
-  }
-}
-
-// ============================================
-// Connection Management
-// ============================================
-
-async function closeDatabase() {
-  if (pool) {
-    try {
-      await pool.end();
-      pool = null;
-      console.log('✅ Database connection closed');
-    } catch (error) {
-      console.error('❌ Error closing database:', error.message);
-      throw error;
-    }
-  }
-}
-
-async function testConnection() {
-  const client = createPool();
-
-  try {
-    const result = await client.query('SELECT NOW()');
-    console.log('✅ Database connection OK:', result.rows[0].now);
-    return true;
-  } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
-    return false;
+    return null;
   }
 }
 
@@ -327,8 +265,6 @@ module.exports = {
   addSubscriber,
   deactivateSubscriber,
   recordEmailSent,
-  getEmailHistory,
-  getEmailStats,
   closeDatabase,
   testConnection
 };

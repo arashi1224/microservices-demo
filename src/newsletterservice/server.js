@@ -16,6 +16,7 @@ const path = require('path');
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
 const cron = require('node-cron');
+const httpApp = require('./http');
 
 const subscribe = require('./subscribe');
 const { sendNewsletterBatch } = require('./newsletter');
@@ -70,6 +71,10 @@ class HipsterShopServer {
         this.startCron()
       }
     );
+
+    httpApp.listen(8081, () => {
+      logger.info('HTTP for unscubscribe from newsletterservice listening on port 8080');
+    });
   }
 
   startCron() {

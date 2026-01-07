@@ -23,6 +23,7 @@
     "@opentelemetry/sdk-trace-base": "2.2.0",
     "@opentelemetry/semantic-conventions": "1.38.0",
     "email-validator": "^2.0.4",
+    "express": "^4.x.x",
     "node-cron": "^3.0.2",
     "pino": "10.1.0",
     "pg": "^8.11.0"
