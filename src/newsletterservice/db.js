@@ -243,13 +243,116 @@ async function recordEmailSent(subscriberId, subject, productId = null, productN
     const result = await client.query(
       `INSERT INTO email_history (subscriber_id, subject, product_id, product_name, status) 
        VALUES ($1, $2, $3, $4, $5) 
-       RETURNING id`,
+       RETURNING id, subscriber_id, subject, product_id, product_name, sent_at, status`,
       [subscriberId, subject, productId, productName, status]
     );
-    return result.rows[0];
+
+    const row = result.rows[0];
+    console.log(`✅ Recorded email for subscriber ${subscriberId}`);
+    
+    return {
+      id: row.id,
+      subscriberId: row.subscriber_id,
+      subject: row.subject,
+//      body: row.body,
+      productId: row.product_id,
+      productName: row.product_name,
+      sentAt: row.sent_at,
+      status: row.status
+    };
   } catch (error) {
     console.error(`❌ Error recording email:`, error.message);
-    return null;
+    throw error;
+  }
+}
+
+/**
+ * Get email history for a subscriber
+ */
+async function getEmailHistory(subscriberId, limit = 10) {
+  const client = createPool();
+
+  try {
+    const result = await client.query(
+      `SELECT id, subscriber_id, subject, product_id, product_name, sent_at, status 
+       FROM email_history 
+       WHERE subscriber_id = $1 
+       ORDER BY sent_at DESC 
+       LIMIT $2`,
+      [subscriberId, limit]
+    );
+
+    return result.rows.map(row => ({
+      id: row.id,
+      subscriberId: row.subscriber_id,
+      subject: row.subject,
+      productId: row.product_id,
+      productName: row.product_name,
+      sentAt: row.sent_at,
+      status: row.status
+    }));
+  } catch (error) {
+    console.error(`❌ Error getting email history:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Get email statistics
+ */
+async function getEmailStats() {
+  const client = createPool();
+
+  try {
+    const result = await client.query(`
+      SELECT 
+        COUNT(*) as total_emails,
+        COUNT(DISTINCT subscriber_id) as unique_subscribers,
+        COUNT(CASE WHEN status = 'sent' THEN 1 END) as successful,
+        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed
+      FROM email_history
+    `);
+
+    const row = result.rows[0];
+    return {
+      totalEmails: parseInt(row.total_emails),
+      uniqueSubscribers: parseInt(row.unique_subscribers),
+      successful: parseInt(row.successful),
+      failed: parseInt(row.failed)
+    };
+  } catch (error) {
+    console.error('❌ Error getting email stats:', error.message);
+    throw error;
+  }
+}
+
+// ============================================
+// Connection Management
+// ============================================
+
+async function closeDatabase() {
+  if (pool) {
+    try {
+      await pool.end();
+      pool = null;
+      console.log('✅ Database connection closed');
+    } catch (error) {
+      console.error('❌ Error closing database:', error.message);
+      throw error;
+    }
+  }
+}
+
+async function testConnection() {
+  const client = createPool();
+
+  try {
+    const result = await client.query('SELECT NOW()');
+    console.log('✅ Database connection OK:', result.rows[0].now);
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message);
+    return false;
   }
 }
 
@@ -265,6 +368,8 @@ module.exports = {
   addSubscriber,
   deactivateSubscriber,
   recordEmailSent,
+  getEmailHistory,
+  getEmailStats,
   closeDatabase,
   testConnection
 };
