@@ -25,8 +25,6 @@ build:
   # https://skaffold.dev/docs/concepts/#image-repository-handling
   - image: emailservice
     context: src/emailservice
-  - image: newsletterservice
-    context: src/newsletterservice
   - image: productcatalogservice
     context: src/productcatalogservice
   - image: recommendationservice
@@ -49,6 +47,8 @@ build:
     context: src/frontend
   - image: adservice
     context: src/adservice
+  - image: newsletterservice
+    context: src/newsletterservice
   tagPolicy:
     gitCommit: {}
   local:

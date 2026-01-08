@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; }
+            .product { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            .product-name { font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 10px; }
+            .product-description { color: #666; margin-bottom: 15px; }
+            .price { font-size: 28px; font-weight: bold; color: #764ba2; margin: 15px 0; }
+            .cta-button { display: inline-block; background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; font-weight: bold; }
+            .unsubscribe-button {display: inline-block; padding: 6px 12px; font-size: 12px; color: #ffffff; background-color: #888888; text-decoration: none; border-radius: 4px;}
+            .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; background: #f9f9f9; border-radius: 0 0 10px 10px; }
+        </style>
+        <script type = "text/javascript" src="server.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>${randomCatchyText}</h1>
+            </div>
+            <div class="content">
+                <p>Hi ${user.firstName} ${user.lastName},</p>
+                <p>We've handpicked something special just for you from our Hipster Shop!</p>
+                
+                <div class="product">
+                    <div class="product-name">${product.name}</div>
+                    <img  style='height: 100%; width: 100%; object-fit: contain' src="${baseURL}/${product.picture}" alt="product Image" />
+                    <div class="product-description">${product.description}</div>
+                    <div class="price">${priceFormatted}</div>
+                    <a href="${baseURL}/product/${product.id}" class="cta-button">Shop Now</a>
+                </div>
+                
+                <p>This is a limited-time offer, so don't wait too long!</p>
+                <p>Happy shopping! 🛍️</p>
+                <p>- The Hipster Shop Team</p>
+            </div>
+            <div class="footer">
+                <p>You're receiving this because you're a valued customer of Hipster Shop.</p>
+                <p>If you no longer wish to receive newsletter, click here: <a href="${httpHost}/unsubscribe?email=${safeEmail}" class="unsubscribe-button">Unsubscribe</a></p>
+                <p>© 2024 Hipster Shop. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+</html>
