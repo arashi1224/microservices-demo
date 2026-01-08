@@ -1179,13 +1179,17 @@ var AdService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	NewsletterService_Subscribe_FullMethodName = "/hipstershop.NewsletterService/Subscribe"
+	NewsletterService_SendNewsletter_FullMethodName      = "/hipstershop.NewsletterService/SendNewsletter"
+	NewsletterService_SendNewsletterBatch_FullMethodName = "/hipstershop.NewsletterService/SendNewsletterBatch"
+	NewsletterService_Subscribe_FullMethodName           = "/hipstershop.NewsletterService/Subscribe"
 )
 
 // NewsletterServiceClient is the client API for NewsletterService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NewsletterServiceClient interface {
+	SendNewsletter(ctx context.Context, in *SendNewsletterRequest, opts ...grpc.CallOption) (*SendNewsletterResponse, error)
+	SendNewsletterBatch(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SendNewsletterBatchResponse, error)
 	Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -1195,6 +1199,26 @@ type newsletterServiceClient struct {
 
 func NewNewsletterServiceClient(cc grpc.ClientConnInterface) NewsletterServiceClient {
 	return &newsletterServiceClient{cc}
+}
+
+func (c *newsletterServiceClient) SendNewsletter(ctx context.Context, in *SendNewsletterRequest, opts ...grpc.CallOption) (*SendNewsletterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendNewsletterResponse)
+	err := c.cc.Invoke(ctx, NewsletterService_SendNewsletter_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *newsletterServiceClient) SendNewsletterBatch(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SendNewsletterBatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendNewsletterBatchResponse)
+	err := c.cc.Invoke(ctx, NewsletterService_SendNewsletterBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *newsletterServiceClient) Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (*Empty, error) {
@@ -1211,6 +1235,8 @@ func (c *newsletterServiceClient) Subscribe(ctx context.Context, in *SubscribeRe
 // All implementations must embed UnimplementedNewsletterServiceServer
 // for forward compatibility.
 type NewsletterServiceServer interface {
+	SendNewsletter(context.Context, *SendNewsletterRequest) (*SendNewsletterResponse, error)
+	SendNewsletterBatch(context.Context, *Empty) (*SendNewsletterBatchResponse, error)
 	Subscribe(context.Context, *SubscribeRequest) (*Empty, error)
 	mustEmbedUnimplementedNewsletterServiceServer()
 }
@@ -1222,6 +1248,12 @@ type NewsletterServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedNewsletterServiceServer struct{}
 
+func (UnimplementedNewsletterServiceServer) SendNewsletter(context.Context, *SendNewsletterRequest) (*SendNewsletterResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendNewsletter not implemented")
+}
+func (UnimplementedNewsletterServiceServer) SendNewsletterBatch(context.Context, *Empty) (*SendNewsletterBatchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendNewsletterBatch not implemented")
+}
 func (UnimplementedNewsletterServiceServer) Subscribe(context.Context, *SubscribeRequest) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Subscribe not implemented")
 }
@@ -1244,6 +1276,42 @@ func RegisterNewsletterServiceServer(s grpc.ServiceRegistrar, srv NewsletterServ
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&NewsletterService_ServiceDesc, srv)
+}
+
+func _NewsletterService_SendNewsletter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendNewsletterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NewsletterServiceServer).SendNewsletter(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NewsletterService_SendNewsletter_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NewsletterServiceServer).SendNewsletter(ctx, req.(*SendNewsletterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NewsletterService_SendNewsletterBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NewsletterServiceServer).SendNewsletterBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NewsletterService_SendNewsletterBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NewsletterServiceServer).SendNewsletterBatch(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _NewsletterService_Subscribe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1271,6 +1339,14 @@ var NewsletterService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "hipstershop.NewsletterService",
 	HandlerType: (*NewsletterServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SendNewsletter",
+			Handler:    _NewsletterService_SendNewsletter_Handler,
+		},
+		{
+			MethodName: "SendNewsletterBatch",
+			Handler:    _NewsletterService_SendNewsletterBatch_Handler,
+		},
 		{
 			MethodName: "Subscribe",
 			Handler:    _NewsletterService_Subscribe_Handler,
